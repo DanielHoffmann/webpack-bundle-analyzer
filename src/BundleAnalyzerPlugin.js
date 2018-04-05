@@ -1,25 +1,24 @@
-const bfj = require('bfj-node4');
-const path = require('path');
-const mkdir = require('mkdirp');
-const { bold } = require('chalk');
+const bfj = require("bfj-node4");
+const path = require("path");
+const mkdir = require("mkdirp");
+const { bold } = require("chalk");
 
-const Logger = require('./Logger');
-const viewer = require('./viewer');
+const Logger = require("./Logger");
+const viewer = require("./viewer");
 
 class BundleAnalyzerPlugin {
-
   constructor(opts) {
     this.opts = {
-      analyzerMode: 'server',
-      analyzerHost: '127.0.0.1',
+      analyzerMode: "server",
+      analyzerHost: "127.0.0.1",
       analyzerPort: 8888,
-      reportFilename: 'report.html',
-      defaultSizes: 'parsed',
+      reportFilename: "report.html",
+      defaultSizes: "parsed",
       openAnalyzer: true,
       generateStatsFile: false,
-      statsFilename: 'stats.json',
+      statsFilename: "stats.json",
       statsOptions: null,
-      logLevel: 'info',
+      logLevel: "info",
       // deprecated
       startAnalyzer: true,
       ...opts
@@ -42,50 +41,57 @@ class BundleAnalyzerPlugin {
       }
 
       // Handling deprecated `startAnalyzer` flag
-      if (this.opts.analyzerMode === 'server' && !this.opts.startAnalyzer) {
-        this.opts.analyzerMode = 'disabled';
+      if (this.opts.analyzerMode === "server" && !this.opts.startAnalyzer) {
+        this.opts.analyzerMode = "disabled";
       }
 
-      if (this.opts.analyzerMode === 'server') {
+      if (this.opts.analyzerMode === "server") {
         actions.push(() => this.startAnalyzerServer(stats));
-      } else if (this.opts.analyzerMode === 'static') {
+      } else if (this.opts.analyzerMode === "static") {
         actions.push(() => this.generateStaticReport(stats));
       }
 
       if (actions.length) {
         // Making analyzer logs to be after all webpack logs in the console
-        setImmediate(() => {
-          actions.forEach(action => action());
-        });
+        // setImmediate(() => {
+        actions.forEach(action => action());
+        // });
       }
     };
 
     if (compiler.hooks) {
-      compiler.hooks.done.tap('webpack-bundle-analyzer', done);
+      compiler.hooks.done.tap("webpack-bundle-analyzer", done);
     } else {
-      compiler.plugin('done', done);
+      compiler.plugin("done", done);
     }
   }
 
   async generateStatsFile(stats) {
-    const statsFilepath = path.resolve(this.compiler.outputPath, this.opts.statsFilename);
+    const statsFilepath = path.resolve(
+      this.compiler.outputPath,
+      this.opts.statsFilename
+    );
     mkdir.sync(path.dirname(statsFilepath));
 
     try {
       await bfj.write(statsFilepath, stats, {
-        promises: 'ignore',
-        buffers: 'ignore',
-        maps: 'ignore',
-        iterables: 'ignore',
-        circular: 'ignore'
+        promises: "ignore",
+        buffers: "ignore",
+        maps: "ignore",
+        iterables: "ignore",
+        circular: "ignore"
       });
 
       this.logger.info(
-        `${bold('Webpack Bundle Analyzer')} saved stats file to ${bold(statsFilepath)}`
+        `${bold("Webpack Bundle Analyzer")} saved stats file to ${bold(
+          statsFilepath
+        )}`
       );
     } catch (error) {
       this.logger.error(
-        `${bold('Webpack Bundle Analyzer')} error saving stats file to ${bold(statsFilepath)}: ${error}`
+        `${bold("Webpack Bundle Analyzer")} error saving stats file to ${bold(
+          statsFilepath
+        )}: ${error}`
       );
     }
   }
@@ -108,7 +114,10 @@ class BundleAnalyzerPlugin {
   generateStaticReport(stats) {
     viewer.generateReport(stats, {
       openBrowser: this.opts.openAnalyzer,
-      reportFilename: path.resolve(this.compiler.outputPath, this.opts.reportFilename),
+      reportFilename: path.resolve(
+        this.compiler.outputPath,
+        this.opts.reportFilename
+      ),
       bundleDir: this.getBundleDirFromCompiler(),
       logger: this.logger,
       defaultSizes: this.opts.defaultSizes
@@ -116,9 +125,11 @@ class BundleAnalyzerPlugin {
   }
 
   getBundleDirFromCompiler() {
-    return (this.compiler.outputFileSystem.constructor.name === 'MemoryFileSystem') ? null : this.compiler.outputPath;
+    return this.compiler.outputFileSystem.constructor.name ===
+      "MemoryFileSystem"
+      ? null
+      : this.compiler.outputPath;
   }
-
 }
 
 module.exports = BundleAnalyzerPlugin;
